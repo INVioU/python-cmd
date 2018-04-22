@@ -9,7 +9,8 @@ name = "pypi"
 
 cryptography = "*"
 pynacl = "*"
-
+Flask = "*"
+flask-cors = "*"
 
 [dev-packages]
 
