@@ -22,7 +22,7 @@ plaintext = b'good aaaaaaaapppppppppppppppppppppppppppppppppppppppaaaaaaaa and b
 alice_ciphertext, umbral_capsule = umbral.encrypt(alice_pub_key, plaintext)
 new_plainText = b'shit'
 alice_new_ciphertext, new_umbral_capsule = umbral.encrypt(alice_pub_key, plaintext)
-print("Alice cyppher: ", alice_ciphertext.hex())
+print("Alice cyppher: ", alice_ciphertext)
 print("Plain Text Hex Size: ", len(plaintext))
 print("Cypher Text Size: ",len(alice_ciphertext.hex()))
 
