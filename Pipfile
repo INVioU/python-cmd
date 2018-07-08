@@ -11,6 +11,7 @@ cryptography = "*"
 pynacl = "*"
 Flask = "*"
 flask-cors = "*"
+typing = "*"
 
 [dev-packages]
 
