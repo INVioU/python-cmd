@@ -21,4 +21,4 @@ def encrypt():
     public_key = private_key.get_pubkey()
     ciphertext, umbral_capsule = umbral.encrypt(public_key, input_plain_text.encode())
 
-    return jsonify({'ciphertext': ciphertext.hex()})
+    return jsonify({'ciphertext': ciphertext.hex(), 'capsule': umbral_capsule.hex()})
