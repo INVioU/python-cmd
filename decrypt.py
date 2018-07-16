@@ -23,4 +23,4 @@ def decrypt():
     decrypted_plain_text = umbral.decrypt(input_umbral_capsule, private_key, input_ciphertext, public_key)
 
 
-    return jsonify({'decrypted_plain_text': decrypted_plain_text})
+    return jsonify({'decrypted_plaintext': decrypted_plaintext})

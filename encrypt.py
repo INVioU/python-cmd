@@ -10,7 +10,7 @@ CORS(app)
 
 @app.route('/encrypt', methods=['POST'])
 def encrypt():
-    input_plain_text = request.form['plaintext']
+    input_plaintext = request.form['plaintext']
     input_private_key = request.form['priv']
     # input_private_key = "effIKT60Ei8M9EtLGb36Gt6+ZjXn7uj8okftqEjlKCE="
 
@@ -19,6 +19,6 @@ def encrypt():
 
     private_key = keys.UmbralPrivateKey.from_bytes(private_key)
     public_key = private_key.get_pubkey()
-    ciphertext, umbral_capsule = umbral.encrypt(public_key, input_plain_text.encode())
+    ciphertext, umbral_capsule = umbral.encrypt(public_key, input_plaintext.encode())
 
     return jsonify({'ciphertext': ciphertext.hex(), 'capsule': umbral_capsule.hex()})
