@@ -14,11 +14,14 @@ def encrypt():
     input_private_key = request.form['priv']
     # input_private_key = "effIKT60Ei8M9EtLGb36Gt6+ZjXn7uj8okftqEjlKCE="
 
-    priv_b = bytes.fromhex(input_private_key)
-    private_key = base64.b64encode(priv_b)
+    # priv_b = bytes.fromhex(input_private_key)
+    # private_key = base64.b64encode(priv_b)
+    private_key = input_private_key
 
     private_key = keys.UmbralPrivateKey.from_bytes(private_key)
     public_key = private_key.get_pubkey()
     ciphertext, umbral_capsule = umbral.encrypt(public_key, input_plaintext.encode())
 
-    return jsonify({'ciphertext': ciphertext.hex(), 'capsule': umbral_capsule.hex()})
+    umbral_capsule_encoded = base64.b64encode(umbral_capsule.to_bytes()).decode("utf-8")
+
+    return jsonify({'ciphertext': ciphertext.hex(), 'capsule': umbral_capsule_encoded})
