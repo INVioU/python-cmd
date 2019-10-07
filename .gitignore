@@ -240,7 +240,7 @@ tags
 [Tt]cl
 pyvenv.cfg
 pip-selfcheck.json
-
+Pipfile.lock
 # End of https://www.gitignore.io/api/vim,linux,macos,python,pycharm,virtualenv
 
 .idea

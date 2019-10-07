@@ -1,15 +1,12 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
 [requires]
-
-python_version = "3.6"
+python_version = "3.7"
 
 [packages]
-
 cryptography = "*"
 pynacl = "*"
 Flask = "*"
@@ -17,7 +14,6 @@ flask-cors = "*"
 typing = "*"
 
 [dev-packages]
-
 pytest = "*"
 coverage = "*"
 pytest-cov = "*"
@@ -27,3 +23,4 @@ pytest-mock = "*"
 codecov = "*"
 sphinx = "*"
 sphinx-autobuild = "*"
+pylint = "*"
