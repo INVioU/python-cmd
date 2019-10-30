@@ -1,0 +1,12 @@
+[uwsgi]
+; chdir=/home/air/repo/Qiy
+module = main:app
+master = true
+processes = 5
+socket = /tmp/uwsgi.socket
+chmod-sock = 664
+vacuum = true
+; plugins=python3  
+callable = app
+die-on-term = true
+asdasd
