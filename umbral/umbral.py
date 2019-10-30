@@ -50,7 +50,7 @@ class Capsule(object):
         """
 
     @classmethod
-    def from_bytes(cls, capsule_bytes: bytes, curve: ec.EllipticCurve = None):
+    def from_bytes(cls, capsule_bytes, curve = None):
         """
         Instantiates a Capsule object from the serialized data.
         """

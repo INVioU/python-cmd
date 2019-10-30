@@ -9,6 +9,11 @@ config.set_default_curve()
 app = Flask(__name__)
 CORS(app)
 
+@app.route('/')
+def hello():
+    name = request.args.get("name", "World")
+    return 'Hello, {(name)}!'
+    
 @app.route('/reencrypt', methods=['POST'])
 def reencrypt():
     alice_priv = request.form['alice_priv']    
@@ -100,3 +105,7 @@ def decrypt():
     decrypted_plaintext_encoded = decrypted_plaintext.decode("utf-8")
 
     return jsonify({'decrypted_plaintext': decrypted_plaintext_encoded})
+
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0')
