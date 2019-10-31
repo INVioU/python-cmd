@@ -1,5 +1,5 @@
 to install :
 
-pipenv install
+pipenv installc
 
 pip3 install -r requirements.txt 
