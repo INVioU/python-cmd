@@ -18,11 +18,9 @@ def hello():
 def reencrypt():
     alice_priv = request.form['alice_priv']    
     alice_priv_key = keys.UmbralPrivateKey.from_bytes(alice_priv)
-    alice_public_key = alice_priv_key.get_pubkey()
 
-    bob_priv = request.form['bob_priv'] 
-    bob_priv_key = keys.UmbralPrivateKey.from_bytes(bob_priv)
-    bob_pub_key = bob_priv_key.get_pubkey()
+    bob_priv = request.form['bob_pub'] 
+    bob_pub_key = keys.UmbralPublicKey.from_bytes(bob_priv)
 
     umbral_capsule = request.form['capsule'] 
     input_ciphertext = request.form['cipher']
@@ -46,14 +44,14 @@ def reencrypt():
     decrypted_plaintext = umbral.decrypt(bob_capsule, bob_priv_key, ciphertext, alice_public_key )
     decrypted_plaintext_encoded = decrypted_plaintext.decode("utf-8")
 
-    print('##########')
-    print (decrypted_plaintext_encoded);
-    print('##########')
-
+    # print('##########')
+    # print (decrypted_plaintext_encoded);
+    # print('##########')
+# 
     umbral_capsule_encoded = base64.b64encode(bob_capsule.to_bytes()).decode("utf-8")
 
 
-    return jsonify({'capsule': umbral_capsule_encoded, 'cipher': input_ciphertext, 'enc_public_key':alice_public_key.to_bytes().decode("utf-8")})
+    return jsonify({'capsule': umbral_capsule_encoded, 'cipher': input_ciphertext, 'public_key':alice_public_key.to_bytes().decode("utf-8")})
 
 
 
@@ -67,18 +65,18 @@ def genereateKeys():
 @app.route('/encrypt', methods=['POST'])
 def encrypt():
     input_plaintext = request.form['plaintext']     # any plain text
-    input_private_key = request.form['priv']    # expected as base64 encoded string
+    input_public_key = request.form['pub']    # expected as base64 encoded string
     # input_private_key = "effIKT60Ei8M9EtLGb36Gt6+ZjXn7uj8okftqEjlKCE="
 
-    private_key = keys.UmbralPrivateKey.from_bytes(input_private_key)
-    public_key = private_key.get_pubkey()
+    public_key = keys.UmbralPublicKey.from_bytes(input_public_key)
+    # public_key = private_key.get_pubkey()
     ciphertext, umbral_capsule = umbral.encrypt(public_key, input_plaintext.encode())
 
     ciphertext_encoded = base64.b64encode(ciphertext).decode("utf-8")
     umbral_capsule_encoded = base64.b64encode(umbral_capsule.to_bytes()).decode("utf-8")
 
-    print('ciphertext_encoded:', ciphertext_encoded)
-    print('umbral_capsule_encoded:', umbral_capsule_encoded)
+    # print('ciphertext_encoded:', ciphertext_encoded)
+    # print('umbral_capsule_encoded:', umbral_capsule_encoded)
 
     return jsonify({'ciphertext': ciphertext_encoded, 'capsule': umbral_capsule_encoded})
 
