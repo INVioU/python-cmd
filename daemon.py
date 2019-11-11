@@ -14,10 +14,11 @@ def hello():
     name = request.args.get("name", "World")
     return 'Hello, {(name)}!'
     
-@app.route('/reencrypt', methods=['POST'])
+@app.route('/encryption/reencrypt', methods=['POST'])
 def reencrypt():
     alice_priv = request.form['alice_priv']    
     alice_priv_key = keys.UmbralPrivateKey.from_bytes(alice_priv)
+    public_key = alice_priv_key.get_pubkey()
 
     bob_priv = request.form['bob_pub'] 
     bob_pub_key = keys.UmbralPublicKey.from_bytes(bob_priv)
@@ -41,8 +42,9 @@ def reencrypt():
         cfrag = umbral.reencrypt(kfrag, input_umbral_capsule)
         bob_capsule.attach_cfrag(cfrag)
     
-    decrypted_plaintext = umbral.decrypt(bob_capsule, bob_priv_key, ciphertext, alice_public_key )
-    decrypted_plaintext_encoded = decrypted_plaintext.decode("utf-8")
+    
+    # decrypted_plaintext = umbral.decrypt(bob_capsule, bob_priv_key, ciphertext, alice_public_key )
+    # decrypted_plaintext_encoded = decrypted_plaintext.decode("utf-8")
 
     # print('##########')
     # print (decrypted_plaintext_encoded);
@@ -51,18 +53,18 @@ def reencrypt():
     umbral_capsule_encoded = base64.b64encode(bob_capsule.to_bytes()).decode("utf-8")
 
 
-    return jsonify({'capsule': umbral_capsule_encoded, 'cipher': input_ciphertext, 'public_key':alice_public_key.to_bytes().decode("utf-8")})
+    return jsonify({'capsule': umbral_capsule_encoded, 'cipher': input_ciphertext, 'public_key':public_key.to_bytes().decode("utf-8")})
 
 
 
-@app.route('/genereateKeys', methods=['POST'])
+@app.route('/encryption/genereateKeys', methods=['POST'])
 def genereateKeys():
     priv_key = keys.UmbralPrivateKey.gen_key()
     public_key = priv_key.get_pubkey()
     return jsonify({'priv_key': priv_key.to_bytes().decode("utf-8"), 'public_key': public_key.to_bytes().decode("utf-8")})
 
 
-@app.route('/encrypt', methods=['POST'])
+@app.route('/encryption/encrypt', methods=['POST'])
 def encrypt():
     input_plaintext = request.form['plaintext']     # any plain text
     input_public_key = request.form['pub']    # expected as base64 encoded string
@@ -81,7 +83,7 @@ def encrypt():
     return jsonify({'ciphertext': ciphertext_encoded, 'capsule': umbral_capsule_encoded})
 
 
-@app.route('/decrypt', methods=['POST'])
+@app.route('/encryption/decrypt', methods=['POST'])
 def decrypt():
     input_ciphertext = request.form['ciphertext']   # expected as base64 encoded string
     input_private_key = request.form['priv']    # expected as base64 encoded string
