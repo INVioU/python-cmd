@@ -13,73 +13,19 @@ CORS(app)
 def hello():
     name = request.args.get("name", "World")
     return 'Hello, {(name)}!'
-    
-@app.route('/encryption/reencrypt', methods=['POST'])
-def reencrypt():
-    alice_priv = request.json.get('priv')
-    pub_key = request.json.get('pub')
-    umbral_capsule = request.json.get('capsule')
-    input_ciphertext = request.json.get('ciphertext')
-
-    if  not alice_priv:
-        return jsonify({'Error': 'Missing required Alice\' Private key - Data owner'})
-
-    if  not pub_key:
-        return jsonify({'Error': 'Missing required Bob\'s Public key - Data receiver'})
-    
-    if  not umbral_capsule:
-        return jsonify({'Error': 'Missing required capsule'})
-
-    if  not input_ciphertext:
-        return jsonify({'Error': 'Missing required capsule'})
-
-    alice_priv_key = keys.UmbralPrivateKey.from_bytes(alice_priv)
-    alice_public_key = alice_priv_key.get_pubkey()
-    bob_pub_key = keys.UmbralPublicKey.from_bytes(pub_key)
-    # convert capsule input from base64 string to bytes, then to Capsule
-    umbral_capsule_decoded_bytes = base64.b64decode(umbral_capsule)
-    input_umbral_capsule = umbral.Capsule.from_bytes(umbral_capsule_decoded_bytes)
-
-    ciphertext = base64.b64decode(input_ciphertext)
-
-
-    # Have Ursula re-encrypt the shares and attach them to the capsule:
-    kfrags, _ = umbral.split_rekey(alice_priv_key, bob_pub_key, 10, 20)
-
-    bob_capsule = input_umbral_capsule
-    for kfrag in kfrags:
-        cfrag = umbral.reencrypt(kfrag, input_umbral_capsule)
-        bob_capsule.attach_cfrag(cfrag)
-
-
- 
-    
-    bob_priv = request.json.get('bob_priv')
-    bob_priv_key   = keys.UmbralPrivateKey.from_bytes(bob_priv)
-
-
-    decrypted_plaintext = umbral.decrypt(bob_capsule, bob_priv_key, ciphertext, alice_public_key)
-    decrypted_plaintext_encoded = decrypted_plaintext.decode("utf-8")
-
-    print('##########')
-    print (decrypted_plaintext_encoded);
-    print('##########')
-# 
-    umbral_capsule_encoded = base64.b64encode(bob_capsule.to_bytes()).decode("utf-8")
- 
-    return jsonify({'capsule': umbral_capsule_encoded, 'cipher': input_ciphertext, 'public_key':alice_public_key.to_bytes().decode("utf-8")})
 
 #Alice
 #priv_key": "F-iDA737-dNugH7hd7cVdenvkOrBZve1Q_vMt_Wk_YA=",
 #"public_key": "AsrWcmmy3QzTG6DDEs3fdFl9FexWkpOaMTTIT3vziaD3"
 
-#    "capsule": "AzqOe7wJCSEgFJXs6R/MmedPyTx/PaX64aQgcrUrC5I5AzBudntQdWGJlwPNCOwSVW3tmcjspI79EM/mlvuJ2Tyquv/5aSgVww60obO30Cfs7F7lXA0b4CxEU896vvMa3Ss=",
-#    "ciphertext": "ycU9eZywrIRskZB7ZJR5AAa7+KDXixTjVskQLk5C6TDo"
+#   "capsule": "AyORjN2L9B2FvpUWm+tqnj0cqXu886e6Xsy2EC3WnM99As6P14OTkd76qNhb1/YtHFjlMKGpwYryntCoSzbrZZTiMGQQH8qUqiyc7areFl7wmJrrgCMqSVHtvWDrOrD38c4=",
+#     "ciphertext": "FcK+9/l667v/TIIf9n20vIIFgEFGT5HNlJvoLHQc3BugMA7Bvdh0e+WaTOcaw2RO"
+
 
 
 #Bob
 #  "priv_key": "WOc52rTKVRCpil74plqHBPkgGSJJrfFZs9Lb_HQkdpQ=",
-#     "public_key": "AsMjOXvGJJhEQEStOZ5qcCTvgT1uRI7BEnbLFelio3wf"
+#  "public_key": "AsMjOXvGJJhEQEStOZ5qcCTvgT1uRI7BEnbLFelio3wf"
 
 # Bob's reencrypt
 
@@ -89,9 +35,17 @@ def reencrypt():
 
 @app.route('/encryption/generateKeys', methods=['POST'])
 def genereateKeys():
-    priv_key = keys.UmbralPrivateKey.gen_key()
-    public_key = priv_key.get_pubkey()
-    return jsonify({'priv_key': priv_key.to_bytes().decode("utf-8"), 'public_key': public_key.to_bytes().decode("utf-8")})
+
+    input_privateKeys = request.json.get('priv')
+    if  not input_privateKeys:
+        priv_key = keys.UmbralPrivateKey.gen_key()
+        pub_key = priv_key.get_pubkey()
+    else:
+        priv_key = keys.UmbralPrivateKey.from_bytes(input_privateKeys)
+        pub_key = priv_key.get_pubkey()
+
+    
+    return jsonify({'priv_key': priv_key.to_bytes.decode("utf-8"), 'public_key': pub_key.to_bytes().decode("utf-8")})
 
 
 @app.route('/encryption/encrypt', methods=['POST'])
@@ -159,6 +113,65 @@ def decrypt():
     decrypted_plaintext_encoded = decrypted_plaintext.decode("utf-8")
 
     return jsonify({'decrypted_plaintext': decrypted_plaintext_encoded})
+
+@app.route('/encryption/reencrypt', methods=['POST'])
+def reencrypt():
+    
+    alice_priv = request.json.get('priv')
+    pub_key = request.json.get('pub')
+    umbral_capsule = request.json.get('capsule')
+    input_ciphertext = request.json.get('ciphertext')
+
+    if  not alice_priv:
+        return jsonify({'Error': 'Missing required Alice\' Private key - Data owner'})
+
+    if  not pub_key:
+        return jsonify({'Error': 'Missing required Bob\'s Public key - Data receiver'})
+    
+    if  not umbral_capsule:
+        return jsonify({'Error': 'Missing required capsule'})
+
+    if  not input_ciphertext:
+        return jsonify({'Error': 'Missing required cipher text'})
+
+    alice_priv_key = keys.UmbralPrivateKey.from_bytes(alice_priv)
+    alice_public_key = alice_priv_key.get_pubkey()
+    bob_pub_key = keys.UmbralPublicKey.from_bytes(pub_key)
+    # convert capsule input from base64 string to bytes, then to Capsule
+    umbral_capsule_decoded_bytes = base64.b64decode(umbral_capsule)
+    input_umbral_capsule = umbral.Capsule.from_bytes(umbral_capsule_decoded_bytes)
+
+    ciphertext = base64.b64decode(input_ciphertext)
+
+
+    # Have Ursula re-encrypt the shares and attach them to the capsule:
+    kfrags, _ = umbral.split_rekey(alice_priv_key, bob_pub_key, 10, 20)
+
+    bob_capsule = input_umbral_capsule
+    for kfrag in kfrags:
+        cfrag = umbral.reencrypt(kfrag, input_umbral_capsule)
+        bob_capsule.attach_cfrag(cfrag)
+
+    umbral_capsule_encoded = base64.b64encode(bob_capsule.to_bytes()).decode("utf-8")
+    
+    print('##########')
+    print (umbral_capsule_encoded);
+    print('##########')
+    
+    bob_priv = request.json.get('bob_priv')
+    bob_priv_key = keys.UmbralPrivateKey.from_bytes(bob_priv)
+
+
+    decrypted_plaintext = umbral.decrypt(bob_capsule, bob_priv_key, ciphertext, alice_public_key)
+    # decrypted_plaintext_encoded = decrypted_plaintext.decode("utf-8")
+
+    print('##########')
+    # print (decrypted_plaintext_encoded);
+    print('##########')
+# 
+    umbral_capsule_encoded = base64.b64encode(bob_capsule.to_bytes()).decode("utf-8")
+
+    return jsonify({'capsule': umbral_capsule_encoded, 'cipher': input_ciphertext, 'public_key':alice_public_key.to_bytes().decode("utf-8")})
 
 
 if __name__ == "__main__":
