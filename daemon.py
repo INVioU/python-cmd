@@ -16,20 +16,29 @@ def hello():
     
 @app.route('/encryption/reencrypt', methods=['POST'])
 def reencrypt():
-    alice_priv = request.form['alice_priv']    
+    alice_priv = request.json.get('priv')
+    pub_key = request.json.get('pub')
+    umbral_capsule = request.json.get('capsule')
+    input_ciphertext = request.json.get('ciphertext')
+
+    if  not alice_priv:
+        return jsonify({'Error': 'Missing required Alice\' Private key - Data owner'})
+
+    if  not pub_key:
+        return jsonify({'Error': 'Missing required Bob\'s Public key - Data receiver'})
+    
+    if  not umbral_capsule:
+        return jsonify({'Error': 'Missing required capsule'})
+
+    if  not input_ciphertext:
+        return jsonify({'Error': 'Missing required capsule'})
+
     alice_priv_key = keys.UmbralPrivateKey.from_bytes(alice_priv)
-    public_key = alice_priv_key.get_pubkey()
-
-    bob_priv = request.form['bob_pub'] 
-    bob_pub_key = keys.UmbralPublicKey.from_bytes(bob_priv)
-
-    umbral_capsule = request.form['capsule'] 
-    input_ciphertext = request.form['cipher']
-
+    alice_public_key = alice_priv_key.get_pubkey()
+    bob_pub_key = keys.UmbralPublicKey.from_bytes(pub_key)
     # convert capsule input from base64 string to bytes, then to Capsule
     umbral_capsule_decoded_bytes = base64.b64decode(umbral_capsule)
     input_umbral_capsule = umbral.Capsule.from_bytes(umbral_capsule_decoded_bytes)
-
 
     ciphertext = base64.b64decode(input_ciphertext)
 
@@ -41,23 +50,44 @@ def reencrypt():
     for kfrag in kfrags:
         cfrag = umbral.reencrypt(kfrag, input_umbral_capsule)
         bob_capsule.attach_cfrag(cfrag)
-    
-    
-    # decrypted_plaintext = umbral.decrypt(bob_capsule, bob_priv_key, ciphertext, alice_public_key )
-    # decrypted_plaintext_encoded = decrypted_plaintext.decode("utf-8")
 
-    # print('##########')
-    # print (decrypted_plaintext_encoded);
-    # print('##########')
+
+ 
+    
+    bob_priv = request.json.get('bob_priv')
+    bob_priv_key   = keys.UmbralPrivateKey.from_bytes(bob_priv)
+
+
+    decrypted_plaintext = umbral.decrypt(bob_capsule, bob_priv_key, ciphertext, alice_public_key)
+    decrypted_plaintext_encoded = decrypted_plaintext.decode("utf-8")
+
+    print('##########')
+    print (decrypted_plaintext_encoded);
+    print('##########')
 # 
     umbral_capsule_encoded = base64.b64encode(bob_capsule.to_bytes()).decode("utf-8")
+ 
+    return jsonify({'capsule': umbral_capsule_encoded, 'cipher': input_ciphertext, 'public_key':alice_public_key.to_bytes().decode("utf-8")})
+
+#Alice
+#priv_key": "F-iDA737-dNugH7hd7cVdenvkOrBZve1Q_vMt_Wk_YA=",
+#"public_key": "AsrWcmmy3QzTG6DDEs3fdFl9FexWkpOaMTTIT3vziaD3"
+
+#    "capsule": "AzqOe7wJCSEgFJXs6R/MmedPyTx/PaX64aQgcrUrC5I5AzBudntQdWGJlwPNCOwSVW3tmcjspI79EM/mlvuJ2Tyquv/5aSgVww60obO30Cfs7F7lXA0b4CxEU896vvMa3Ss=",
+#    "ciphertext": "ycU9eZywrIRskZB7ZJR5AAa7+KDXixTjVskQLk5C6TDo"
 
 
-    return jsonify({'capsule': umbral_capsule_encoded, 'cipher': input_ciphertext, 'public_key':public_key.to_bytes().decode("utf-8")})
+#Bob
+#  "priv_key": "WOc52rTKVRCpil74plqHBPkgGSJJrfFZs9Lb_HQkdpQ=",
+#     "public_key": "AsMjOXvGJJhEQEStOZ5qcCTvgT1uRI7BEnbLFelio3wf"
 
+# Bob's reencrypt
 
+#    "capsule": "AzqOe7wJCSEgFJXs6R/MmedPyTx/PaX64aQgcrUrC5I5AzBudntQdWGJlwPNCOwSVW3tmcjspI79EM/mlvuJ2Tyquv/5aSgVww60obO30Cfs7F7lXA0b4CxEU896vvMa3SsDIScfqytHGk9Ldy4kc7Egkc+6B7XltEqCJVVTJCLuj+0DrHyK0jXxRPjc80UpMTREMK6iOSpWpaFRtXKg3xcdeeMCF3A5l0wkS7Miz7FABleLy3hkekLqANorzGLzrBzkEkQ=",
+#    "cipher": "ycU9eZywrIRskZB7ZJR5AAa7+KDXixTjVskQLk5C6TDo",
+#    "public_key": "AsrWcmmy3QzTG6DDEs3fdFl9FexWkpOaMTTIT3vziaD3"
 
-@app.route('/encryption/genereateKeys', methods=['POST'])
+@app.route('/encryption/generateKeys', methods=['POST'])
 def genereateKeys():
     priv_key = keys.UmbralPrivateKey.gen_key()
     public_key = priv_key.get_pubkey()
@@ -66,9 +96,16 @@ def genereateKeys():
 
 @app.route('/encryption/encrypt', methods=['POST'])
 def encrypt():
-    input_plaintext = request.form['plaintext']     # any plain text
-    input_public_key = request.form['pub']    # expected as base64 encoded string
-    # input_private_key = "effIKT60Ei8M9EtLGb36Gt6+ZjXn7uj8okftqEjlKCE="
+
+    input_public_key = request.json.get('pub')
+    input_plaintext = request.json.get('plaintext')
+
+    if  not request.json.get('plaintext'):
+        return jsonify({'Error': 'Missing required plaintext'})
+
+    if  not request.json.get('pub'):
+        return jsonify({'Error': 'Missing required public key'})
+
 
     public_key = keys.UmbralPublicKey.from_bytes(input_public_key)
     # public_key = private_key.get_pubkey()
@@ -85,10 +122,19 @@ def encrypt():
 
 @app.route('/encryption/decrypt', methods=['POST'])
 def decrypt():
-    input_ciphertext = request.form['ciphertext']   # expected as base64 encoded string
-    input_private_key = request.form['priv']    # expected as base64 encoded string
-    input_umbral_capsule = request.form['capsule']  # expected as base64 encoded string
-    # input_private_key = "effIKT60Ei8M9EtLGb36Gt6+ZjXn7uj8okftqEjlKCE="
+
+    input_ciphertext = request.json.get('ciphertext')
+    input_private_key = request.json.get('priv')
+    input_umbral_capsule = request.json.get('capsule')
+
+    if  not input_ciphertext:
+        return jsonify({'Error': 'Missing required ciphertext'})
+
+    if  not input_private_key:
+        return jsonify({'Error': 'Missing required private key'})
+    
+    if  not input_umbral_capsule:
+        return jsonify({'Error': 'Missing required capsule'})
 
     # convert capsule input from base64 string to bytes, then to Capsule
     umbral_capsule_decoded_bytes = base64.b64decode(input_umbral_capsule)
@@ -101,7 +147,15 @@ def decrypt():
     # convert from base64 string
     ciphertext = base64.b64decode(input_ciphertext)
 
-    decrypted_plaintext = umbral.decrypt(input_umbral_capsule, private_key, ciphertext, public_key)
+    pub_key = request.json.get('pub')
+    if pub_key:
+        print('Decrypt reencrypted')
+        alice_public_key = keys.UmbralPublicKey.from_bytes(pub_key)    
+        decrypted_plaintext = umbral.decrypt(input_umbral_capsule, private_key, ciphertext, alice_public_key)
+    else:        
+        print('Decrypt encrypted')
+        decrypted_plaintext = umbral.decrypt(input_umbral_capsule, private_key, ciphertext, public_key)
+
     decrypted_plaintext_encoded = decrypted_plaintext.decode("utf-8")
 
     return jsonify({'decrypted_plaintext': decrypted_plaintext_encoded})
