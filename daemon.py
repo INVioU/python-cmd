@@ -9,7 +9,15 @@ config.set_default_curve()
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/')
+
+		
+
+# @app.route('/', defaults={'path': ''})
+# @app.route('/<path:path>')
+# def catch_all(path):
+#     return 'You want path: %s' % path
+
+@app.route('/encryption/')
 def hello():
     name = request.args.get("name", "World")
     return 'Hello, {(name)}!'
@@ -51,27 +59,34 @@ def genereateKeys():
 @app.route('/encryption/encrypt', methods=['POST'])
 def encrypt():
 
+    print('entered');
+    
     input_public_key = request.json.get('pub')
-    input_plaintext = request.json.get('plaintext')
+    intputArray = request.json.get('input')
 
-    if  not request.json.get('plaintext'):
-        return jsonify({'Error': 'Missing required plaintext'})
+    
+    if  not intputArray:
+        return jsonify({'Error': 'Missing required input data to encrypt input = [{id:1,plaintext:123},{id:2,plaintext:222}....]' })
 
-    if  not request.json.get('pub'):
+    if  not input_public_key:
         return jsonify({'Error': 'Missing required public key'})
 
-
     public_key = keys.UmbralPublicKey.from_bytes(input_public_key)
-    # public_key = private_key.get_pubkey()
-    ciphertext, umbral_capsule = umbral.encrypt(public_key, input_plaintext.encode())
 
-    ciphertext_encoded = base64.b64encode(ciphertext).decode("utf-8")
-    umbral_capsule_encoded = base64.b64encode(umbral_capsule.to_bytes()).decode("utf-8")
+    results = []
+    for item in intputArray:
+        input_plaintext = item.get('plaintext');
+        # public_key = private_key.get_pubkey()
+        ciphertext, umbral_capsule = umbral.encrypt(public_key, input_plaintext.encode())
 
+        ciphertext_encoded = base64.b64encode(ciphertext).decode("utf-8")
+        umbral_capsule_encoded = base64.b64encode(umbral_capsule.to_bytes()).decode("utf-8")
+        results.append({'id':item.get('id'),'ciphertext': ciphertext_encoded, 'capsule': umbral_capsule_encoded})
     # print('ciphertext_encoded:', ciphertext_encoded)
     # print('umbral_capsule_encoded:', umbral_capsule_encoded)
 
-    return jsonify({'ciphertext': ciphertext_encoded, 'capsule': umbral_capsule_encoded})
+    # return jsonify({'ciphertext': ciphertext_encoded, 'capsule': umbral_capsule_encoded})
+    return jsonify(results);
 
 
 @app.route('/encryption/decrypt', methods=['POST'])
@@ -174,5 +189,31 @@ def reencrypt():
     return jsonify({'capsule': umbral_capsule_encoded, 'cipher': input_ciphertext, 'public_key':alice_public_key.to_bytes().decode("utf-8")})
 
 
+
+
+@app.errorhandler(400)
+def bad_request(error=None):
+    message = {
+        'status': 400,
+        'message': 'bad request: ' + request.url,
+    }
+    resp = jsonify(message)
+    resp.status_code = 404
+
+    return resp
+
+@app.errorhandler(404)
+def not_found(error=None):
+    message = {
+        'status': 404,
+        'message': 'Not Found: ' + request.url,
+    }
+    resp = jsonify(message)
+    resp.status_code = 404
+
+    return resp
+
+
 if __name__ == "__main__":
-    app.run(host='0.0.0.0')
+    # app.run(host='0.0.0.0')
+    app.run()
