@@ -3,7 +3,7 @@
 
 # docker build -t registry.inviou.co/encryption:1.0.0 .
 # docker push registry.inviou.co/encryption:1.0.0
-
+#Ors-MacBook-Pro:python-cmd orlavee$ docker build -t registry.inviou.co/encryption:1.0.1 . && docker push registry.inviou.co/encryption:1.0.1
 
 FROM tiangolo/uwsgi-nginx-flask:python3.7
 
