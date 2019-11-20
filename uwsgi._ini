@@ -9,4 +9,3 @@ vacuum = true
 ; plugins=python3  
 callable = app
 die-on-term = true
-asdasd

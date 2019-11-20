@@ -52,8 +52,7 @@ def genereateKeys():
         priv_key = keys.UmbralPrivateKey.from_bytes(input_privateKeys)
         pub_key = priv_key.get_pubkey()
 
-    
-    return jsonify({'priv_key': priv_key.to_bytes.decode("utf-8"), 'public_key': pub_key.to_bytes().decode("utf-8")})
+    return jsonify({'private_key': priv_key.to_bytes().decode("utf-8"), 'public_key': pub_key.to_bytes().decode("utf-8")})
 
 
 @app.route('/encryption/encrypt', methods=['POST'])
@@ -61,31 +60,50 @@ def encrypt():
 
     print('entered');
     
-    input_public_key = request.json.get('pub')
+    input_client_public_key = request.json.get('pub_client')
+    input_inviou_public_key = request.json.get('pub_inviou')
+
     intputArray = request.json.get('input')
 
     
     if  not intputArray:
         return jsonify({'Error': 'Missing required input data to encrypt input = [{id:1,plaintext:123},{id:2,plaintext:222}....]' })
 
-    if  not input_public_key:
+    if  not input_client_public_key:
         return jsonify({'Error': 'Missing required public key'})
 
-    public_key = keys.UmbralPublicKey.from_bytes(input_public_key)
+    if input_inviou_public_key:
+        inviou_public_key = keys.UmbralPublicKey.from_bytes(input_inviou_public_key)
 
-    results = []
+    client_public_key = keys.UmbralPublicKey.from_bytes(input_client_public_key)
+
+    results_inviou = []
+    results_client = []
     for item in intputArray:
         input_plaintext = item.get('plaintext');
         # public_key = private_key.get_pubkey()
-        ciphertext, umbral_capsule = umbral.encrypt(public_key, input_plaintext.encode())
+        ciphertext, umbral_capsule = umbral.encrypt(client_public_key, input_plaintext.encode())
 
         ciphertext_encoded = base64.b64encode(ciphertext).decode("utf-8")
         umbral_capsule_encoded = base64.b64encode(umbral_capsule.to_bytes()).decode("utf-8")
-        results.append({'id':item.get('id'),'ciphertext': ciphertext_encoded, 'capsule': umbral_capsule_encoded})
+        results_client.append({'id':item.get('id'),'ciphertext': ciphertext_encoded, 'capsule': umbral_capsule_encoded})
+
+        if input_inviou_public_key: 
+            ciphertext_inviou, umbral_capsule_inviou = umbral.encrypt(inviou_public_key, input_plaintext.encode())
+
+            ciphertext_encoded_inviou = base64.b64encode(ciphertext_inviou).decode("utf-8")
+            umbral_capsule_encoded_inviou = base64.b64encode(umbral_capsule_inviou.to_bytes()).decode("utf-8")
+            results_inviou.append({'id':item.get('id'),'ciphertext': ciphertext_encoded_inviou, 'capsule': umbral_capsule_encoded_inviou})
+
     # print('ciphertext_encoded:', ciphertext_encoded)
     # print('umbral_capsule_encoded:', umbral_capsule_encoded)
 
     # return jsonify({'ciphertext': ciphertext_encoded, 'capsule': umbral_capsule_encoded})
+    results = []
+    results.append({'encrypted':results_client});
+    if input_inviou_public_key:
+        results.append({'encrypted_inviou':results_inviou});
+
     return jsonify(results);
 
 
@@ -167,7 +185,7 @@ def reencrypt():
         cfrag = umbral.reencrypt(kfrag, input_umbral_capsule)
         bob_capsule.attach_cfrag(cfrag)
 
-    umbral_capsule_encoded = base64.b64encode(bob_capsule.to_bytes()).decode("utf-8")
+    # umbral_capsule_encoded = base64.b64encode(bob_capsule.to_bytes()).decode("utf-8")
     
     print('##########')
     print (umbral_capsule_encoded);
@@ -184,7 +202,7 @@ def reencrypt():
     # print (decrypted_plaintext_encoded);
     print('##########')
 # 
-    umbral_capsule_encoded = base64.b64encode(bob_capsule.to_bytes()).decode("utf-8")
+    umbral_capsule_encoded = bob_capsule.to_bytes().decode("utf-8")
 
     return jsonify({'capsule': umbral_capsule_encoded, 'cipher': input_ciphertext, 'public_key':alice_public_key.to_bytes().decode("utf-8")})
 
