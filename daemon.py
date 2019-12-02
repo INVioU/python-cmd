@@ -3,6 +3,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 # config.set_default_curve()
 import base64
+import random 
+from umbral.fragments import KFrag, CapsuleFrag
+import json
 
 config.set_default_curve()
 
@@ -99,10 +102,12 @@ def encrypt():
     # print('umbral_capsule_encoded:', umbral_capsule_encoded)
 
     # return jsonify({'ciphertext': ciphertext_encoded, 'capsule': umbral_capsule_encoded})
-    results = []
-    results.append({'encrypted':results_client});
+    results = {};
+    results['encrypted'] = results_client;
+    # results.append({'encrypted':results_client});
     if input_inviou_public_key:
-        results.append({'encrypted_inviou':results_inviou});
+        results['encrypted_inviou'] = results_inviou;
+        # results.append({'encrypted_inviou':results_inviou});
 
     return jsonify(results);
 
@@ -111,7 +116,7 @@ def encrypt():
 def decrypt():
 
     input_ciphertext = request.json.get('ciphertext')
-    input_private_key = request.json.get('priv')
+    input_private_key = request.json.get('private_key')
     input_umbral_capsule = request.json.get('capsule')
 
     if  not input_ciphertext:
@@ -134,7 +139,7 @@ def decrypt():
     # convert from base64 string
     ciphertext = base64.b64decode(input_ciphertext)
 
-    pub_key = request.json.get('pub')
+    pub_key = request.json.get('public_key')
     if pub_key:
         print('Decrypt reencrypted')
         alice_public_key = keys.UmbralPublicKey.from_bytes(pub_key)    
@@ -150,13 +155,13 @@ def decrypt():
 @app.route('/encryption/reencrypt', methods=['POST'])
 def reencrypt():
     
-    alice_priv = request.json.get('priv')
-    pub_key = request.json.get('pub')
+    alice_priv = request.json.get('private_key')
+    pub_key = request.json.get('pub_client')
     umbral_capsule = request.json.get('capsule')
     input_ciphertext = request.json.get('ciphertext')
 
     if  not alice_priv:
-        return jsonify({'Error': 'Missing required Alice\' Private key - Data owner'})
+        return jsonify({'Error': 'Missing required Data owner\' Private key - '})
 
     if  not pub_key:
         return jsonify({'Error': 'Missing required Bob\'s Public key - Data receiver'})
@@ -178,33 +183,46 @@ def reencrypt():
 
 
     # Have Ursula re-encrypt the shares and attach them to the capsule:
-    kfrags, _ = umbral.split_rekey(alice_priv_key, bob_pub_key, 10, 20)
+    kfrags,_ = umbral.split_rekey(alice_priv_key, bob_pub_key, 10, 20)
 
+    umbral.split_rekey
+    rand_min_shares = random.sample(kfrags,10);
+
+    cfrags = list()
     bob_capsule = input_umbral_capsule
-    for kfrag in kfrags:
-        cfrag = umbral.reencrypt(kfrag, input_umbral_capsule)
-        bob_capsule.attach_cfrag(cfrag)
-
+    for kfrag in rand_min_shares:
+        cfrag= umbral.reencrypt(kfrag, input_umbral_capsule)
+        cfrags.append(cfrag)
+        # bob_capsule.attach_cfrag(cfrag)
+    
+    # cfrags2 = base64.b64decode(CapsuleFrag.from_bytes(base64.b64encode(cfrags.to_bytes())))
+    # for c in cfrags2:
+    # bob_capsule.attach_cfrag(c)
     # umbral_capsule_encoded = base64.b64encode(bob_capsule.to_bytes()).decode("utf-8")
     
     print('##########')
-    print (umbral_capsule_encoded);
+    # print (umbral_capsule_encoded);
     print('##########')
     
-    bob_priv = request.json.get('bob_priv')
+    # cfrag_dump = json.dumps(bob_capsule._attached_cfrags);
+    # bob_capsule._attached_cfrags = {}
+    # bob_capsule._attached_cfrags = json.loads(cfrag_dump);
+    
+    bob_priv = request.json.get('private_client')
     bob_priv_key = keys.UmbralPrivateKey.from_bytes(bob_priv)
 
 
-    decrypted_plaintext = umbral.decrypt(bob_capsule, bob_priv_key, ciphertext, alice_public_key)
+    # decrypted_plaintext = umbral.decrypt(bob_capsule, bob_priv_key, ciphertext, alice_public_key)
+
     # decrypted_plaintext_encoded = decrypted_plaintext.decode("utf-8")
 
     print('##########')
     # print (decrypted_plaintext_encoded);
     print('##########')
 # 
-    umbral_capsule_encoded = bob_capsule.to_bytes().decode("utf-8")
+    umbral_capsule_encoded = base64.b64encode(bob_capsule.to_bytes()).decode("utf-8")
 
-    return jsonify({'capsule': umbral_capsule_encoded, 'cipher': input_ciphertext, 'public_key':alice_public_key.to_bytes().decode("utf-8")})
+    return jsonify({'capsule_bob': umbral_capsule_encoded,  'ciphertext': input_ciphertext, 'public_key':alice_public_key.to_bytes().decode("utf-8")})
 
 
 
