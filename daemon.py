@@ -102,7 +102,7 @@ def encrypt():
     # print('umbral_capsule_encoded:', umbral_capsule_encoded)
 
     # return jsonify({'ciphertext': ciphertext_encoded, 'capsule': umbral_capsule_encoded})
-    results = {};
+    results = 
     results['encrypted'] = results_client;
     # results.append({'encrypted':results_client});
     if input_inviou_public_key:
